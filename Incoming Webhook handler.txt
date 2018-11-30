@@ -1,0 +1,147 @@
+
+message = list();
+payload = list();
+info body;
+event = body.get(0).get("eventType");
+id = body.get(0).get("taskId");
+info event;
+flag = 0;
+response = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/tasks"
+	type :GET
+	connection:"wrike_zoho_cliq"
+];
+taskslist = response.get("data");
+for each  task in taskslist
+{
+	chkid = task.get("id");
+	taskURL = task.get("permalink");
+	if(chkid == id)
+	{
+		Tname = task.get("title");
+		break;
+	}
+}
+info Tname;
+if(event.equalsIgnoreCase("TaskResponsiblesAdded"))
+{
+	flag = 7;
+	res = body.get(0).get("addedResponsibles").get(0);
+	userdetails = invokeurl
+	[
+		url :"https://www.wrike.com/api/v3/users/" + res
+		type :GET
+		connection:"wrike_zoho_cliq"
+	];
+	//info response;
+	//userDetails = response.get("data");
+	name = userdetails.get("data").toMap().get("firstName");
+	mail = userdetails.get("data").toMap().get("profiles").toMap().get("email");
+	message = "A new event occured :" + event + "\nTask Title : " + Tname;
+}
+else if(event.equalsIgnoreCase("CommentAdded"))
+{
+	flag = 1;
+	comment = body.get(0).get("comment").toMap().get("text");
+	message = "A new event occured :" + event + "\nTask Title : " + Tname + "\nComments : " + comment;
+}
+else if(event.equalsIgnoreCase("TaskTitleChanged"))
+{
+	flag = 2;
+	oldtitle = body.get(0).get("oldValue");
+	newtitle = body.get(0).get("title");
+	message = "A new event occured :" + event + "\nTask Title : " + Tname + "\nOld Title : " + oldtitle + "\nNew Title : " + newtitle;
+}
+else if(event.equalsIgnoreCase("TaskStatusChanged"))
+{
+	flag = 3;
+	oldstatus = body.get(0).get("oldStatus");
+	newstatus = body.get(0).get("status");
+	message = "A new event occured :" + event + "\nTask Title : " + Tname + "\nOld Staus : " + oldstatus + "\nNew Status : " + newstatus;
+}
+else if(event.equalsIgnoreCase("TaskImportanceChanged"))
+{
+	flag = 4;
+	oldimp = body.get(0).get("oldValue");
+	newimp = body.get(0).get("importance");
+	message = "A new event occured :" + event + "\nTask Title : " + Tname + "\nOld Importance: " + oldimp + "\nNew Importance : " + newimp;
+}
+else if(event.equalsIgnoreCase("TaskDeleted"))
+{
+	flag = 5;
+	message = "A new event occured :" + event;
+}
+else if(event.equalsIgnoreCase("TaskDatesChanged"))
+{
+	flag = 6;
+	start = body.get(0).get("dates").get("startDate");
+	end = body.get(0).get("dates").get("dueDate");
+}
+else if(event.equalsIgnoreCase("TaskCreated"))
+{
+	response1 = invokeurl
+	[
+		url :"https://www.wrike.com/api/v3/tasks"
+		type :GET
+		connection:"wrike_zoho_cliq"
+	];
+	newtaskslist = response1.get("data");
+	for each  tasks in newtaskslist
+	{
+		chkid = tasks.get("id");
+		taskURL = tasks.get("permalink");
+		if(chkid == id)
+		{
+			Tname = tasks.get("title");
+			break;
+		}
+	}
+	message = "A new event occured : " + event + "\nTask Title : " + Tname;
+}
+else
+{
+	if(Tname == null)
+	{
+		message = "A new event occured : " + event;
+	}
+	else
+	{
+		message = "A new event occured : " + event + "\nTask Title : " + Tname;
+	}
+}
+if(flag == 0)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 1)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Comments","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Comments":comment,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 2)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Old Title","New Title","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Old Title":oldtitle,"New Title":newtitle,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 3)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Old Status","New Status","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Old Status":oldstatus,"New Status":newstatus,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 4)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Old Importance","New Importance","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Old Importance":oldimp,"New Importance":newimp,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 5)
+{
+	payload = {"text":"A new event occured : Task Deleted","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"prompt"}};
+}
+else if(flag == 6)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Start Date","End Date","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Start Date":start,"End Date":end,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+else if(flag == 7)
+{
+	payload = {"text":"A new Event Occured!","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Title","Event Occured","Assigned To","Email","View Details"},"rows":{{"Task Title":Tname,"Event Occured":event,"Assigned To":name,"Email":mail,"View Details":"[view task](" + taskURL + ")"}}}}}};
+}
+zoho.cliq.postToBot("wtaskbot",payload);
+zoho.cliq.postToChannel("wrikenotifications",payload);
+return Map();

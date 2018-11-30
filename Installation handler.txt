@@ -1,0 +1,65 @@
+
+response = Map();
+account = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/accounts"
+	type :GET
+	connection:"wrike_zoho_cliq"
+];
+id = account.get("data").toMap().get("id");
+webhooks = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/accounts/" + id + "/webhooks"
+	type :GET
+	connection:"wrike_zoho_cliq"
+];
+data = webhooks.get("data");
+info data;
+for each  item in data
+{
+	wb = item.get("id");
+	info wb;
+	del_webhook = invokeurl
+	[
+		url :"https://www.wrike.com/api/v3/webhooks/" + wb
+		type :DELETE
+		connection:"wrike_zoho_cliq"
+	];
+	info del_webhook;
+}
+/*account = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/accounts"
+	type :GET
+	connection:"wrike"
+];
+id = account.get("data").toMap().get("id");*/
+params = Map();
+params.put("hookUrl","https://cliq.zoho.com/api/v2/applications/1750/incoming?zapikey=" + authtoken + "&appkey=bc3f83e63bdfd8c97fb8bb4a8d0bc6695094ce5cc757bec62d7412d6c9c3f466313628068bc0e881cb90f8004836e8d56d49bd6f5525af4bada1f919c65c6d5f");
+create_webhook = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/accounts/" + id + "/webhooks"
+	type :POST
+	parameters:params
+	connection:"wrike_zoho_cliq"
+];
+info create_webhook;
+check = create_webhook.get("data").toMap().get("status");
+if(check.equals("Active"))
+{
+	response.put("status","200");
+	response.put("title","Success");
+	response.put("message","Wrike extension has been activated!");
+}
+else
+{
+	response.put("status","500");
+	response.put("title","Uh-oh!");
+	response.put("message","We're sorry! Wrike extension could not be activated successfully!");
+	note = list();
+	note.add("Installation failure might be due to the following reasons:");
+	note.add("There may be a issue in webhook creation");
+	response.put("note",note);
+	response.put("footer","Contact arumugamgandhi156@gmail.com for any related help / support.");
+}
+return response;

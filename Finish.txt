@@ -1,0 +1,14 @@
+
+Tid = arguments.get("key");
+params = Map();
+params.put("status","Completed");
+response = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/tasks/" + Tid
+	type :PUT
+	parameters:params
+	connection:"wrike_zoho_cliq"
+];
+message = {"bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"text":"Task Completed in wrike!"};
+zoho.cliq.postToBot("wtaskbot",message);
+return Map();
