@@ -1,0 +1,35 @@
+
+message = list();
+response = Map();
+if(arguments == "")
+{
+	message = {"bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"text":"Please pass the task title as argument to create a new task!\nExample : /wrikenew taskname"};
+	zoho.cliq.postToBot("wtaskbot",message);
+	return message;
+}
+else
+{
+	params = Map();
+	params.put("title",arguments);
+	response = invokeurl
+	[
+		url :"https://www.wrike.com/api/v3/folders"
+		type :GET
+		connection:"wrike_zoho_cliq"
+	];
+	info response;
+	//https://www.wrike.com/api/v4/folders
+	id = response.get("data").toMap().get("id");
+	response1 = invokeurl
+	[
+		url :"https://www.wrike.com/api/v3/folders/" + id + "/tasks"
+		type :POST
+		parameters:params
+		connection:"wrike_zoho_cliq"
+	];
+	info response1;
+	message = {"bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"text":"New task created\nTask name :" + arguments};
+	//zoho.cliq.postToBot("wtaskbot",message);
+	//zoho.cliq.postToChannel("wrikenotifications",message);
+	return message;
+}
