@@ -1,0 +1,44 @@
+
+message = list();
+rows = list();
+response = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/tasks"
+	type :GET
+	connection:"wrike_zoho_cliq"
+];
+tasks = response.get("data");
+info tasks;
+details = "";
+count = 1;
+for each  task in tasks
+{
+	if(count > 5)
+	{
+		break;
+	}
+	check = task.get("status");
+	if(check.equals("Completed"))
+	{
+		taskDetails = task.get("title");
+		completeddate = task.get("completedDate");
+		details = details + "Task Name : " + taskDetails + "\n Completed date : " + completeddate + "\n";
+		row = Map();
+		row.put("Task Name",taskDetails);
+		row.put("Completed date",completeddate);
+		rows.add(row);
+		count = count + 1;
+	}
+}
+info details;
+if(details == "")
+{
+	message = {"bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"text":"No tasks completed recently!"};
+	zoho.cliq.postToBot("wtaskbot",message);
+}
+else
+{
+	message = {"text":"The Recently Completed Tasks are: ","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Name","Completed date"},"rows":rows}}}};
+	zoho.cliq.postToBot("wtaskbot",message);
+}
+return message;
