@@ -1,0 +1,53 @@
+
+message = list();
+rows = list();
+response = invokeurl
+[
+	url :"https://www.wrike.com/api/v3/tasks"
+	type :GET
+	connection:"wrike_zoho_cliq"
+];
+tasks = response.get("data");
+info tasks;
+details = "";
+count = 1;
+for each  task in tasks
+{
+	if(count > 5)
+	{
+		break;
+	}
+	check = task.get("status");
+	if(check.equals("Active"))
+	{
+		taskDetails = task.get("title");
+		taskURL = task.get("permalink");
+		da = task.get("dates").toMap().get("due");
+		imp = task.get("importance");
+		if(da == null)
+		{
+			da = "not set";
+		}
+		details = details + "Task Name : " + taskDetails + "\n Task Url : " + taskURL + "\n Importance : " + imp + "\n due date : " + da + "\n";
+		row = Map();
+		row.put("Task Name",taskDetails);
+		row.put("Importance",imp);
+		row.put("Due Date",da);
+		row.put("View Details","[view task](" + taskURL + ")");
+		row.put("Complete","[+Finish](invoke.function|Finish|arumugamgandhi156@gmail.com|" + task.get("id") + ")");
+		rows.add(row);
+		count = count + 1;
+	}
+}
+info details;
+if(details == "")
+{
+	message = {"bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"text":"No Active tasks present in wrike!"};
+	zoho.cliq.postToBot("wtaskbot",message);
+}
+else
+{
+	message = {"text":"Active Tasks in wrike are: ","bot":{"name":"Wrike","image":"https://cdn.forconstructionpros.com/files/base/acbm/fcp/image/2018/05/1x1/960w/wrike_logo.5b0eb7268b60f.jpg"},"card":{"theme":"modern-inline"},"slides":{{"type":"table","title":"","data":{"headers":{"Task Name","Importance","Due Date","View Details","Complete"},"rows":rows}}}};
+	zoho.cliq.postToBot("wtaskbot",message);
+}
+return message;
